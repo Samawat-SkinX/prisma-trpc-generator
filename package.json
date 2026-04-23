@@ -26,9 +26,8 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@prisma/client": "^4.8.0",
-    "@prisma/generator-helper": "^4.8.0",
-    "@prisma/internals": "^4.8.0",
+    "@prisma/generator-helper": "^7.8.0",
+    "@prisma/internals": "^7.8.0",
     "pluralize": "^8.0.0",
     "prisma-zod-generator": "github:Revitate/prisma-zod-generator#89a7b5c89355c1043655efd6b53e0866cb173661",
     "ts-morph": "^16.0.0",
@@ -38,8 +37,8 @@
     "@trpc/server": "^10.0.0-rc.2",
     "@types/node": "^18.7.14",
     "@types/pluralize": "^0.0.29",
-    "prisma": "^4.8.0",
-    "typescript": "^4.8.2"
+    "prisma": "^7.8.0",
+    "typescript": "^5.0.0"
   },
   "bugs": {
     "url": "https://github.com/omar-dulaimi/prisma-trpc-generator/issues"

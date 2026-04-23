@@ -1,5 +1,5 @@
 import { EnvValue, GeneratorOptions } from '@prisma/generator-helper';
-import { getDMMF, parseEnvValue } from '@prisma/internals';
+import { parseEnvValue } from '@prisma/internals';
 import { promises as fs } from 'fs';
 import path from 'path';
 import pluralize from 'pluralize';
@@ -16,6 +16,9 @@ import {
 import { project } from './project';
 import removeDir from './utils/removeDir';
 
+// Operations introduced in Prisma 5+ that require additional schema support not yet implemented
+const UNSUPPORTED_OPERATIONS = new Set(['createManyAndReturn', 'updateManyAndReturn']);
+
 export async function generate(options: GeneratorOptions) {
   const outputDir = parseEnvValue(options.generator.output as EnvValue);
   const results = configSchema.safeParse(options.generator.config);
@@ -27,18 +30,13 @@ export async function generate(options: GeneratorOptions) {
 
   options.generator.config['isGenerateSelect'] = 'true';
   options.generator.config['isGenerateInclude'] = 'true';
-  await PrismaZodGenerator(options);
-
-  const prismaClientProvider = options.otherGenerators.find(
-    (it) => parseEnvValue(it.provider) === 'prisma-client-js',
-  );
+  // prisma-zod-generator bundles Prisma 4's generator-helper types; cast to satisfy its stale signature
+  await PrismaZodGenerator(options as any);
 
   const dataSource = options.datasources?.[0];
 
-  const prismaClientDmmf = await getDMMF({
-    datamodel: options.datamodel,
-    previewFeatures: prismaClientProvider.previewFeatures,
-  });
+  // GeneratorOptions includes the DMMF directly since Prisma 5
+  const prismaClientDmmf = options.dmmf;
 
   const appRouter = project.createSourceFile(
     path.resolve(outputDir, 'routers', `index.ts`),
@@ -76,6 +74,7 @@ export async function generate(options: GeneratorOptions) {
     const procedures: string[] = [];
 
     for (const [opType, opNameWithModel] of Object.entries(operations)) {
+      if (opNameWithModel == null || UNSUPPORTED_OPERATIONS.has(opType)) continue;
       const modelProcedure = project.createSourceFile(
         path.resolve(
           outputDir,

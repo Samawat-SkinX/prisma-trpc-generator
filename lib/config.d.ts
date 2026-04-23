@@ -6,4 +6,4 @@ export declare const configSchema: z.ZodObject<{
 }, {
     trpcPath?: string;
 }>;
-export declare type Config = z.infer<typeof configSchema>;
+export type Config = z.infer<typeof configSchema>;
