@@ -1,6 +1,6 @@
 {
   "name": "prisma-trpc-generator",
-  "version": "0.5.2",
+  "version": "0.5.2-prisma7",
   "description": "Prisma 2+ generator to emit fully implemented tRPC routers",
   "repository": "https://github.com/omar-dulaimi/prisma-trpc-generator",
   "bin": {
@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "tsc && npx prisma generate",
+    "test": "jest",
     "package:publish": "./package.sh && cd package && npm publish"
   },
   "author": {
@@ -33,11 +34,18 @@
     "ts-morph": "^16.0.0",
     "tslib": "^2.4.0"
   },
+  "peerDependencies": {
+    "@trpc/server": ">=10.0.0",
+    "prisma": ">=7.0.0"
+  },
   "devDependencies": {
     "@trpc/server": "^10.0.0-rc.2",
+    "@types/jest": "^30.0.0",
     "@types/node": "^18.7.14",
     "@types/pluralize": "^0.0.29",
+    "jest": "^30.3.0",
     "prisma": "^7.8.0",
+    "ts-jest": "^29.4.9",
     "typescript": "^5.0.0"
   },
   "bugs": {
