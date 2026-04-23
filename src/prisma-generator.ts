@@ -25,13 +25,27 @@ export async function generate(options: GeneratorOptions) {
   if (!results.success) throw new Error('Invalid options passed');
   const config = results.data;
 
+  // contextPath is an upstream alias for trpcPath
+  const resolvedTrpcPath = config.contextPath ?? config.trpcPath;
+
   await fs.mkdir(outputDir, { recursive: true });
   await removeDir(outputDir, true);
 
   options.generator.config['isGenerateSelect'] = 'true';
   options.generator.config['isGenerateInclude'] = 'true';
+  // prisma-zod-generator requires languages; provide resolved value so it never crashes
+  options.generator.config['languages'] = config.languages;
+
+  // prisma-zod-generator bundles Prisma 4 internals which require a `url` in the datasource
+  // block, but Prisma 7 forbids `url` in schema.prisma. Inject a dummy url only into the
+  // datamodel copy that the zod generator uses — Prisma 7 has already validated the real schema.
+  const datamodelForZod = options.datamodel.replace(
+    /(datasource\s+\w+\s*\{)([^}]*?)(provider\s*=\s*[^\n]+)/,
+    '$1$2$3\n  url      = "mysql://localhost/dummy"',
+  );
+
   // prisma-zod-generator bundles Prisma 4's generator-helper types; cast to satisfy its stale signature
-  await PrismaZodGenerator(options as any);
+  await PrismaZodGenerator({ ...options, datamodel: datamodelForZod } as any);
 
   const dataSource = options.datasources?.[0];
 
@@ -45,7 +59,7 @@ export async function generate(options: GeneratorOptions) {
   );
 
   // hot fix for windows
-  const trpcPath = config.trpcPath.split(path.sep).join('/');
+  const trpcPath = resolvedTrpcPath.split(path.sep).join('/');
 
   generatetRPCRouterImport(appRouter, trpcPath);
 
@@ -87,7 +101,14 @@ export async function generate(options: GeneratorOptions) {
       );
       generatetRPCProcedureImport(modelProcedure, path.join('..', trpcPath));
       generateProcedureSchemaImports(modelProcedure, opType, model);
-      generateProcedure(modelProcedure, opNameWithModel, model, opType);
+      generateProcedure(
+        modelProcedure,
+        opNameWithModel,
+        model,
+        opType,
+        config.withMiddleware,
+        config.withShield,
+      );
       procedures.push(`${opNameWithModel}: ${opNameWithModel}Procedure`);
     }
     modelRouter.addStatements(/* ts */ `

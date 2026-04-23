@@ -120,6 +120,8 @@ export function generateProcedure(
   name: string,
   modelName: string,
   opType: string,
+  withMiddleware?: string,
+  withShield?: string,
 ) {
   let input = 'input';
   switch (opType) {
@@ -152,8 +154,28 @@ export function generateProcedure(
         '{ where: input.where, create: input.create, update: input.update }';
       break;
   }
+
+  if (withMiddleware) {
+    sourceFile.addImportDeclaration({
+      moduleSpecifier: withMiddleware,
+      defaultImport: 'middleware',
+    });
+  }
+
+  if (withShield) {
+    sourceFile.addImportDeclaration({
+      moduleSpecifier: withShield,
+      defaultImport: 'shield',
+    });
+  }
+
+  const middlewareChain = [
+    withShield ? '.use(shield)' : '',
+    withMiddleware ? '.use(middleware)' : '',
+  ].join('');
+
   sourceFile.addStatements(/* ts */ `
-export const ${name}Procedure = procedure
+export const ${name}Procedure = procedure${middlewareChain}
   .input(${getInputTypeByOpName(opType, modelName)})
   .${getProcedureTypeByOpName(opType)}(async ({ ctx, input }) => {
     const ${name} = await ctx.prisma.${uncapitalizeFirstLetter(
