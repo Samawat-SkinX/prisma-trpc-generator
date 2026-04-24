@@ -5,6 +5,7 @@ import path from 'path';
 import pluralize from 'pluralize';
 import { generate as PrismaZodGenerator } from 'prisma-zod-generator/lib/prisma-generator';
 import { configSchema } from './config';
+import { fixGeneratedSchemas } from './fix-schemas';
 import {
   generateProcedure,
   generateProcedureImports,
@@ -46,6 +47,12 @@ export async function generate(options: GeneratorOptions) {
 
   // prisma-zod-generator bundles Prisma 4's generator-helper types; cast to satisfy its stale signature
   await PrismaZodGenerator({ ...options, datamodel: datamodelForZod } as any);
+
+  // Apply Prisma 7 compatibility patches to the generated schema files:
+  //   • Rename ${Model}Args → ${Model}DefaultArgs (type + file + importers)
+  //   • Fix filter in/notIn to array-only; add string unions for DateTime/Int/BigInt/Decimal
+  //   • Add <never> generic to ZodType<Prisma.XxxFilter> annotations
+  await fixGeneratedSchemas(outputDir);
 
   const dataSource = options.datasources?.[0];
 
