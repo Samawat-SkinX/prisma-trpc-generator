@@ -117,18 +117,30 @@ async function fixArgsSchemas(
     renames.push({ oldBase, newBase, oldConst, newConst });
   }
 
-  // Patch every other schema file that still imports the old name
-  const remaining = await collectSchemaFiles(path.dirname(objectsDir));
+  // Patch every other schema file that still imports/re-exports the old name.
+  // collectSchemaFiles only returns *.schema.ts, so also add the barrel index
+  // explicitly — it uses `export * from './objects/UserArgs.schema'` lines that
+  // must be updated to point at the renamed DefaultArgs files.
+  const schemasDir = path.dirname(objectsDir);
+  const remaining = [
+    ...(await collectSchemaFiles(schemasDir)),
+    path.join(schemasDir, 'index.ts'),
+  ];
+
   for (const file of remaining) {
     let content = await tryRead(file);
     if (content === null) continue;
     const original = content;
 
     for (const { oldBase, newBase, oldConst, newConst } of renames) {
-      // Update import path (e.g. './UserArgs.schema' → './UserDefaultArgs.schema')
+      // Update import/export path.
+      // Matches any quoted path ending in /<oldBase>.schema, regardless of
+      // how many directory segments precede it, e.g.:
+      //   './UserArgs.schema'          (objects/*.schema.ts cross-imports)
+      //   './objects/UserArgs.schema'  (barrel index.ts re-exports)
       content = content
         .replace(
-          new RegExp(`(['"])(\\.\\./|\\./)?${oldBase}\\.schema\\1`, 'g'),
+          new RegExp(`(['"])((?:\\.\\./|\\./)(?:[^'"]*/)?)${oldBase}\\.schema\\1`, 'g'),
           `$1$2${newBase}.schema$1`,
         )
         // Update identifier anywhere in file
