@@ -30,7 +30,7 @@
     "@prisma/generator-helper": "^4.8.0",
     "@prisma/internals": "^4.8.0",
     "pluralize": "^8.0.0",
-    "prisma-zod-generator": "github:Revitate/prisma-zod-generator#89a7b5c89355c1043655efd6b53e0866cb173661",
+    "prisma-zod-generator": "github:Samawat-SkinX/prisma-zod-generator#89a7b5c89355c1043655efd6b53e0866cb173661",
     "ts-morph": "^16.0.0",
     "tslib": "^2.4.0"
   },
